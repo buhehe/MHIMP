@@ -1,0 +1,666 @@
+// File     :  spell_summon_npc.skrit v.0.89 Rostro with included gather code
+// 12 17 02 removed preexisting eq if exists in template before equipping weapons.
+// need to fix only one summoned named hereo at a time
+// delete eqiped item before gather
+// do no check for dup entry in il main for shield
+// zen il main eq
+// 10 29 02
+// Portent and Foolius originally had modified spell_summon.skrit which inspired
+// me write summon npc with gather stuff code
+
+property string effect_script$		= ""	doc = "Name of the SiegeFx script that will be providing the visual.";
+property string end_script$			= ""	doc = "Name of the SiegeFx script that will be providing the visual when un_summoning.";
+property string script_params$		= ""   	doc = "Parameters to send to SiegeFx script";
+property string template_name$		= ""   	doc = "Template name of actor to summon";
+property string state_name$			= "summoned"			doc = "Name of effect to use as a generic state and as a screen name.";
+property bool	change_align$		= true	doc = "set summon alignment to be that of the caster.";
+
+owner = GoSkritComponent;
+#include "k_inc_spl_utils"
+
+int starting_pos$;
+Goid summoned_goid$, MyChar$;
+Goid target$;
+Goid caster$;
+float summon_duration$;
+String Filename$;
+Bool Kanathia$, Myst$, Ulora$, Gyorn$, Naidi$;
+
+// below this are the functions
+
+// TransferSpell.skrit by Icemage
+// Moves a spell from a character's inventory to a spellbook
+void TransferSpell$(GO SpellGO$, GO SpellBookGO$, GoID Char$, int Slot$)
+{
+  // Decipher the location of the spell slot
+  eInventoryLocation IL_Transfer$;
+  If (Slot$ == 1)
+    {
+    IL_Transfer$ = il_spell_1;
+    }
+  Else If (Slot$ == 2)
+    {
+    IL_Transfer$ = il_spell_2;
+    }
+  Else If (Slot$ == 3)
+    {
+    IL_Transfer$ = il_spell_3;
+    }
+  Else If (Slot$ == 4)
+    {
+    IL_Transfer$ = il_spell_4;
+    }
+  Else If (Slot$ == 5)
+    {
+    IL_Transfer$ = il_spell_5;
+    }
+  Else If (Slot$ == 6)
+    {
+    IL_Transfer$ = il_spell_6;
+    }
+  Else If (Slot$ == 7)
+    {
+    IL_Transfer$ = il_spell_7;
+    }
+  Else If (Slot$ == 8)
+    {
+    IL_Transfer$ = il_spell_8;
+    }
+  Else If (Slot$ == 9)
+    {
+    IL_Transfer$ = il_spell_9;
+    }
+  Else If (Slot$ == 10)
+    {
+    IL_Transfer$ = il_spell_10;
+    }
+  Else If (Slot$ == 11)
+    {
+    IL_Transfer$ = il_spell_11;
+    }
+  Else If (Slot$ == 12)
+    {
+    IL_Transfer$ = il_spell_12;
+    }
+
+   // Transfer the spell
+   Char$.go.Inventory.RSTransfer(SpellGO$, SpellBookGO$, IL_Transfer$, AO_HUMAN, true );
+
+   //return?  Doesn't seem to need it.
+}
+
+// gatherEq by Rostro with the help of the Elemental Team
+// creates item with all magical attributes and returns its GOID
+Goid gatherEq$( string Stuff$, string Pstuff$ )
+{
+	GoCloneReq CloneReq$;
+	GoID NewGoid$;
+	if (Pstuff$ == ""  )
+	{
+		CloneReq$ = MakeGoCloneReq(Stuff$);
+		NewGoid$ = GoDB.SCloneGo(CloneReq$);
+		Return (NewGoid$);
+	}
+
+	if ( Pstuff$ == "a" )
+	{
+		CloneReq$ = MakeGoCloneReq(Stuff$);
+		NewGoid$ = GoDB.SCloneGo(CloneReq$);
+		Return (NewGoid$);
+	}
+	CloneReq$ = MakeGoCloneReq(Stuff$);
+	NewGoid$ = GoDB.SCloneGo(CloneReq$, Pstuff$);
+	return (NewGoid$);
+	//Return NewGoid$ so that we can add auto-equip the item
+}
+
+
+// above this are the functions
+
+trigger OnGoPreload$
+{
+	//report.screen("Preload");// used
+	if( template_name$ != "")
+	{
+		GoDb.PreloadCloneSource( owner.Go, template_name$ );
+	}
+}
+
+startup state CastBegin$
+{
+ 	event OnGoHandleMessage$( eWorldEvent e$, WorldMessage msg$ )
+	{
+		if( e$ == WE_REQ_CAST )
+		{
+			//report.screen("We_ReqCast");//used first ONE
+			////////////////////
+			// Normal Go
+
+			caster$ = msg$.GetSendFrom();
+			target$ = MakeGoid( msg$.GetData1() );
+
+			if( !target$.IsValidMp || !caster$.IsValidMp )
+			{
+				SetState Abort$;
+				return;
+			}
+
+			if( caster$.Go.Actor.HasGenericState( owner.Go.Magic.CasterStateName ) )
+			{
+				SetState Abort$;
+				return;
+			}
+			// my own premative version of HasGenericState?
+			if ( template_name$ == "kanathia" )
+			{
+				if ( Kanathia$ ){ Setstate Abort$;}// already summoned kanathia
+				Kanathia$ = True;
+			}
+			if ( template_name$ == "myst" )
+			{
+				if ( Myst$ ){ Setstate Abort$;}// already summoned kanathia
+				Myst$ = True;
+			}
+			if ( template_name$ == "ulora" )
+			{
+				if ( Ulora$ ){ Setstate Abort$;}// already summoned kanathia
+				Ulora$ = True;
+			}
+			if ( template_name$ == "naidi" )
+			{
+				if ( Naidi$ ){ Setstate Abort$;}// already summoned kanathia
+				Naidi$ = True;
+			}
+			if ( template_name$ == "gyorn" )
+			{
+				if ( Gyorn$ ){ Setstate Abort$;}// already summoned kanathia
+				Gyorn$ = True;
+			}
+
+			// Copy the reference to the starting position into SiegeFx persistant storage
+			starting_pos$ = SiegeFx.AddVariable( target$.go.placement.position, owner.goid );
+			//report.screenf("starting pos %i", starting_pos$);// TWO
+
+			// Start the visual effect
+			SiegeFx.SRunScript( effect_script$, target$, caster$, script_params$, owner.Goid, WE_REQ_CAST );
+
+		}
+		else if ( e$ == WE_SPELL_SYNC_MID )
+		{
+			////////////////////
+			// Normal Go     //SetState SummonGo$;
+
+			if( Owner.go.Parent != NULL )
+			{
+				//report.screen("summon go");// used THREE
+				// First create the go
+				GoCloneReq cloneReq$;
+				cloneReq$ = MakeGoCloneReq( template_name$ );
+				cloneReq$.StartingPos = SiegeFx.GetVariable( starting_pos$, owner.goid );
+				cloneReq$.SnapToTerrain = true;
+				cloneReq$.Fadein = true;
+				summoned_goid$ = GoDb.SCloneGo( cloneReq$ );
+
+				if( change_align$ && caster$.IsValid )
+				{
+					summoned_goid$.Go.actor.ssetalignment( caster$.Go.actor.alignment );
+					summoned_goid$.Go.SsetPlayer( caster$.Go.PlayerID );
+				}
+				summoned_goid$.Go.Aspect.IsInvincible = true;
+
+				// create Omni version of the spell.
+				cloneReq$ = MakeGoCloneReq( Owner.go.Parent.Goid, owner.goid );
+				cloneReq$.Omni = true;
+				Goid new_spell$ = GoDb.SCloneGo( cloneReq$ );
+
+				// send Omni version an Activate to get it started.
+				PostWorldMessage( WE_REQ_ACTIVATE, caster$, new_spell$, MakeInt( summoned_goid$ ), 0 );
+			}
+			// delete normal version of the spell.
+
+			SetState Finished$; // FOUR
+
+		}
+		else if ( e$ == WE_REQ_ACTIVATE )
+		{
+
+			////////////////////
+			// Omni Go
+			//report.screen("We req activate OMNI");// executed Five,  Ahhhhhhh!
+
+			caster$ = msg$.GetSendFrom();
+			summoned_goid$ = MakeGoid( msg$.GetData1() );
+
+			if( !summoned_goid$.IsValid || !caster$.Isvalid )
+			{
+				//report.screen("Onminicleanup");
+				SetState CleanUp$;
+				return;
+			}
+
+			if( summoned_goid$.go.hasactor )
+			{
+				//report.screen("OnmiHasActor");// USED Six
+				summoned_goid$.Go.Aspect.IsInvincible = false;
+			    caster$.Go.OwningParty.Party.RSAddMemberNow( summoned_goid$.Go );
+				GoDb.StartWatching( owner.Goid, summoned_goid$);
+ 			}
+ 			else
+ 			{
+ 				//report.screen("Onminicleanup2");
+ 				SetState CleanUp$;
+ 			}
+ 			//report.screen("Onmi THis create timer");
+
+			//this.CreateTimer( 1, 0 );
+			SetState AddPotion$; // Seven // equip thy things
+			// add generic state so only one of named can be summoned at a time
+	/*		if( caster$.IsValid() )
+			{
+				summoned_goid$.Go.Actor.SAddGenericState( state_name$, description$, summon_duration$, caster$, owner.goid, owner.go.magic.GetMagicLevel( caster$.go ) );
+				caster$.Go.Actor.SRemoveGenericState( owner.Go.Magic.CasterStateName );
+				caster$.Go.Actor.SAddGenericState( owner.Go.Magic.CasterStateName, caster_description$, summon_duration$, caster$, owner.goid, owner.go.magic.GetMagicLevel( caster$.go ) );
+
+				// we want to be able to see the dude's health
+				//summoned_goid$.Go.Actor.SSetCanShowHealth( true );
+
+				// Make him have the same membership as the caster
+				//summoned_goid$.Go.Common.SCopyMembership( caster$ );
+			} */
+		}
+	}
+}
+
+state AddPotion$
+{
+	event OnEnterState$
+	{
+		//report.screen("add potion");// used FOUR
+        MyChar$ = summoned_goid$;
+		MyChar$.Go.Common.GetScreenName( Filename$ );
+		report.screenf(" screen name %s ", Filename$);
+		GoCloneReq CloneReq$;
+		GoID NewGoid$;
+		float melee$, range$, cm$, nm$, str$, intl$, dex$;
+		String StuffTmplt$, Pcontent$;
+
+/*
+		StuffTmplt$ = "engine_Stre";
+		CloneReq$ = MakeGoCloneReq(StuffTmplt$);
+		NewGoid$ = GoDB.SCloneGo(CloneReq$);
+		MyChar$.go.Inventory.RSAdd(NewGoid$.Go, il_main, AO_HUMAN, TRUE);
+		*/  //we dont' need no stinken potions
+
+float test$ = DllLink.gatherStats(1, Filename$);
+if (test$ == -10 ) // if the file exists (== -10), then continue, otherwise skip the following and goto finished state
+ {
+
+// zero out stats
+		MyChar$.Go.Actor.RCSetSkillLevels(0, 0, 0);
+
+//Gather the stats and award XP
+		melee$ = DllLink.gatherStats(2, Filename$);
+		range$ = DllLink.gatherStats(3, Filename$);
+		nm$ = DllLink.gatherStats(4, Filename$);
+		cm$ = DllLink.gatherStats(5, FIlename$);
+		Str$ = DllLink.gatherStats(6, FIlename$);
+		Dex$ = DllLink.gatherStats(7, FIlename$);
+		Intl$ = DllLink.gatherStats(8, FIlename$);
+
+//Melee award
+		//Need to create generic melee weap add XP and then 'remove' weap
+		StuffTmplt$ = "dg_g_c_1h_avg";// basic dagger
+		CloneReq$ = MakeGoCloneReq(StuffTmplt$);
+		NewGoid$ = GoDB.SCloneGo(CloneReq$);
+
+        //add it to main inventory
+		MyChar$.go.Inventory.RSAdd(NewGoid$.Go, il_main, AO_HUMAN, TRUE);
+
+		//Award Melee XP with Meelee goid
+		rules.AwardExperience(MyChar$, NewGoid$, melee$ ); //oh yeah, works
+		//Remove item from inventory (not drop)...
+		PostWorldMessage(WE_REQ_DELETE, NewGoid$, NewGoid$,0);
+
+//Range award
+		StuffTmplt$ = "bw_g_o_c_s_4_fun";// basic bow
+		CloneReq$ = MakeGoCloneReq(StuffTmplt$);
+		NewGoid$ = GoDB.SCloneGo(CloneReq$);
+		MyChar$.go.Inventory.RSAdd(NewGoid$.Go, il_main, AO_HUMAN, TRUE);
+		rules.AwardExperience(MyChar$, NewGoid$, range$ ); //oh yeah, works
+		PostWorldMessage(WE_REQ_DELETE, NewGoid$, NewGoid$,0);
+
+//Nm stat add
+		StuffTmplt$ = "spell_healing_hands";
+		CloneReq$ = MakeGoCloneReq(StuffTmplt$);
+		NewGoid$ = GoDB.SCloneGo(CloneReq$);
+		MyChar$.go.Inventory.RSAdd(NewGoid$.Go, il_main, AO_HUMAN, TRUE);
+		rules.AwardExperience(MyChar$, NewGoid$, Nm$ ); //oh yeah, works
+		PostWorldMessage(WE_REQ_DELETE, NewGoid$, NewGoid$,0);
+
+//Cm stat add
+		StuffTmplt$ = "spell_flame";//pick a lower level one fire_shot
+		CloneReq$ = MakeGoCloneReq(StuffTmplt$);
+		NewGoid$ = GoDB.SCloneGo(CloneReq$);
+		MyChar$.go.Inventory.RSAdd(NewGoid$.Go, il_main, AO_HUMAN, TRUE);
+		rules.AwardExperience(MyChar$, NewGoid$, Cm$ ); //oh yeah, works
+		PostWorldMessage(WE_REQ_DELETE, NewGoid$, NewGoid$,0);
+
+// set stats to correct values
+//	m_Go$.Actor.RCSetSkillLevels(14.000, 10.000, 10.000);
+		MyChar$.Go.Actor.RCSetSkillLevels(Str$, Intl$, Dex$);
+
+
+// THE GATHERING...
+		// in the stored file, the equipment (not stats) start at the 10th position
+		int i$ = 10; // number 9 is an "a"
+		GO SpellBook$;
+		int SpellCnt$;
+  		StuffTmplt$ = "";
+
+//gather previously equiped spellbook
+	StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+	i$ = i$ + 1;
+	Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+	if (StuffTmplt$ <> "" ) // what if StuffTmplt$ = "EOF"... then we outy
+	{
+		NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$);
+		// remove already quiped spell book
+		// get goid of spell book and post world message remove item
+		go oldbook$ = MyChar$.go.Inventory.getequipped(ES_SPELLBOOK);
+		PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+		report.screenf("the old nbook %s", oldbook$.templatename);
+
+		MyChar$.go.Inventory.RSAutoEquip(ES_SPELLBOOK, NewGoid$, AO_HUMAN);
+		SpellBook$ = NewGoid$.go; //Get our equipped spellbook, we just added the spell book above w NewGoid$
+		SpellCnt$ = 1;
+	}
+		i$ = i$ + 1;
+   		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		While ( StuffTmplt$ <> "endspell" )
+    	{
+    	  if  ( StuffTmplt$ <> "" )
+		  {
+			CloneReq$ = MakeGoCloneReq(StuffTmplt$);
+			NewGoid$ = GoDB.SCloneGo(CloneReq$);
+			MyChar$.go.Inventory.RSAdd(NewGoid$.Go, il_main, AO_HUMAN, TRUE);
+		  	TransferSpell$(NewGoid$.GO, SpellBook$, MyChar$, SpellCnt$);
+	      	SpellCnt$ = SpellCnt$ + 1 ;
+	      }
+    	  i$ = i$ + 1;
+   		  StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+   		}
+		//StuffTmplt$ is == "EndSpell" here
+ 		StuffTmplt$ = "";
+//gather eq melee
+		i$ = i$ + 1; // past endspell
+		i$ = i$ + 1; // past "a"
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		i$ = i$ + 1;
+		Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+		if (StuffTmplt$ <> "" )
+		{
+			NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$  );//create item and RSADD it
+			// you don't need to add it to inventory first, RSAutoEquip equips it from the air
+			oldbook$ = MyChar$.go.Inventory.getequipped(ES_Weapon_Hand);
+			PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+			MyChar$.go.Inventory.RSAutoEquip(ES_Weapon_Hand, NewGoid$, AO_HUMAN);
+		}
+
+//gather eq Ranged
+		if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+		i$ = i$ + 1;
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		i$ = i$ + 1;
+		Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+		if (StuffTmplt$ <> "" )
+		{
+			NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$ );
+			oldbook$ = MyChar$.go.Inventory.getequipped(ES_Weapon_Hand);
+			PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+			MyChar$.go.Inventory.RSAutoEquip(ES_Weapon_Hand, NewGoid$, AO_HUMAN);
+		}
+
+//gather eq Helmet
+		if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+		i$ = i$ + 1;
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		i$ = i$ + 1;
+		Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+		if (StuffTmplt$ <> "" )
+		{
+			NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$ );
+			oldbook$ = MyChar$.go.Inventory.getequipped(ES_Head);
+			PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+			MyChar$.go.Inventory.RSAutoEquip(ES_head, NewGoid$, AO_HUMAN);
+		}
+
+//gather eq Armour
+		if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+		i$ = i$ + 1;
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		i$ = i$ + 1;
+		Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+		if (StuffTmplt$ <> "" )
+		{
+			NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$ );
+			oldbook$ = MyChar$.go.Inventory.getequipped(ES_Chest);
+			PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+			MyChar$.go.Inventory.RSAutoEquip(ES_Chest, NewGoid$, AO_HUMAN);
+		}
+
+//gather eq gloves
+		if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+		i$ = i$ + 1;
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		i$ = i$ + 1;
+		Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+		if (StuffTmplt$ <> "" )
+		{
+			NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$ );
+			oldbook$ = MyChar$.go.Inventory.getequipped(ES_Forearms);
+			PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+			MyChar$.go.Inventory.RSAutoEquip(ES_forearms, NewGoid$, AO_HUMAN);
+		}
+
+//gather eq amulet
+		if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+		i$ = i$ + 1;
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		i$ = i$ + 1;
+		Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+		if (StuffTmplt$ <> "" )
+		{
+			NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$ );
+			oldbook$ = MyChar$.go.Inventory.getequipped(ES_Amulet);
+			PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+			MyChar$.go.Inventory.RSAutoEquip(ES_amulet, NewGoid$, AO_HUMAN);
+		}
+
+//gather eq boots
+		if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+		i$ = i$ + 1;
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		i$ = i$ + 1;
+		Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+		if (StuffTmplt$ <> "" )
+		{
+			NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$ );
+			oldbook$ = MyChar$.go.Inventory.getequipped(ES_feet);
+			PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+			MyChar$.go.Inventory.RSAutoEquip(ES_feet, NewGoid$, AO_HUMAN);
+		}
+
+//gather eq ring1
+		if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+		i$ = i$ + 1;
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		i$ = i$ + 1;
+		Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+		if (StuffTmplt$ <> "" )
+		{
+			NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$ );
+			oldbook$ = MyChar$.go.Inventory.getequipped(ES_ring_0);
+			PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+			MyChar$.go.Inventory.RSAutoEquip(ES_ring_0, NewGoid$, AO_HUMAN);
+		}
+
+//gather eq ring2
+		if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+		i$ = i$ + 1;
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		i$ = i$ + 1;
+		Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+		if (StuffTmplt$ <> "" )
+		{
+			NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$ );
+			oldbook$ = MyChar$.go.Inventory.getequipped(ES_ring_1);
+			PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+			MyChar$.go.Inventory.RSAutoEquip(ES_ring_1, NewGoid$, AO_HUMAN);
+		}
+
+//gather eq Ring3
+		if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+		i$ = i$ + 1;
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		i$ = i$ + 1;
+		Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+		if (StuffTmplt$ <> "" )
+		{
+			NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$ );
+			oldbook$ = MyChar$.go.Inventory.getequipped(ES_ring_2);
+			PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+			MyChar$.go.Inventory.RSAutoEquip(ES_ring_2, NewGoid$, AO_HUMAN);
+		}
+
+//gather eq Ring4
+		if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+		i$ = i$ + 1;
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		i$ = i$ + 1;
+		Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+		if (StuffTmplt$ <> "" )
+		{
+			NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$ );
+			oldbook$ = MyChar$.go.Inventory.getequipped(ES_ring_3);
+			PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+			MyChar$.go.Inventory.RSAutoEquip(ES_ring_3, NewGoid$, AO_HUMAN);
+		}
+
+
+//gather eq Shield// export is not working //is working now?
+		if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+		i$ = i$ + 1;
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		i$ = i$ + 1;
+		Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+		if (StuffTmplt$ <> "" )
+		{
+			NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$ );
+			oldbook$ = MyChar$.go.Inventory.getequipped(ES_Shield_Hand);
+			PostWorldMessage( WE_REQ_DELETE, oldbook$.goid, oldbook$.goid, 0 );
+			MyChar$.go.Inventory.RSAutoEquip(ES_Shield_Hand, NewGoid$, AO_HUMAN);
+		}
+
+
+//il_main: fill in the main inventory
+		string book$;
+		if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+		i$ = i$ + 1;
+		StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+		while (StuffTmplt$ <> "EOF")
+		{
+			i$ = i$ + 1;
+			Pcontent$ = DllLink.gatherStuff(i$, Filename$);
+			if (StuffTemplt$ <> "" ) // stufftmplt
+			{
+				NewGoid$ = gatherEq$(StuffTmplt$, Pcontent$ );
+				MyChar$.go.Inventory.RSAdd(NewGoid$.Go, il_main, AO_HUMAN, TRUE);
+			}
+
+			book$ = stringtool.Left(StuffTmplt$, 5); // get the first five letters
+			// of the template, is it "book_" ?
+	     	if (book$ == "book_")
+			{
+				//it is book_, lets gather its spells
+				SpellBook$ = NewGoid$.go; //Get our spellbook, we just added the spell book above w NewGoid$
+				SpellCnt$ = 1;
+				i$ = i$ + 1;
+
+			    //get a spell ID here
+    			StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+				While ( StuffTmplt$ <> "endspell" ) //it doesn't matter if it is a spell book or not,
+				// in the export function, "endspell" appears after all non spell books.
+    			{
+					CloneReq$ = MakeGoCloneReq(StuffTmplt$);
+					NewGoid$ = GoDB.SCloneGo(CloneReq$);
+
+			        //add spell to main inventory
+					MyChar$.go.Inventory.RSAdd(NewGoid$.Go, il_main, AO_HUMAN, TRUE);
+
+				  	TransferSpell$(NewGoid$.GO, SpellBook$, MyChar$, SpellCnt$);
+    	  			SpellCnt$ = SpellCnt$ + 1 ;
+			     	i$ = i$ + 1;
+
+			     	//get another spell ID here
+    	 			StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+			    }
+
+				////report.screen("endspell");
+			}
+			i$ = i$ + 1;
+			if (Pcontent$ <> "a" ){ i$ = i$ + 1;}
+			StuffTmplt$ = DllLink.gatherStuff(i$, Filename$);
+			////report.screenF(" says %s ", StuffTmplt$);
+		}
+ }
+
+		//SetState Finished$;
+	}
+}
+
+state Finished$
+{
+	////////////////////
+	// Normal Go
+
+	event OnEnterState$
+	{	// Four
+		//report.screen("Finished");// used after add potion and before Omni We Req
+		PostWorldMessage( WE_REQ_DELETE, owner.Goid, owner.Goid, 1 );
+	}
+}
+
+/*
+state FinishedOmni$
+{
+	////////////////////
+	// Omni Go
+
+	event OnEnterState$
+	{
+		//report.screen("FInishedOmni");// not used
+		// Get rid of any temporary storage
+		SiegeFx.ClearVariables( owner.goid );
+
+		PostWorldMessage( WE_REQ_DELETE, owner.Goid, owner.Goid, 1 );
+	}
+}
+*/
+
+state Abort$
+{
+	////////////////////
+	// Normal Go
+
+	event OnEnterState$
+	{
+		//report.screen("state abort");
+		// Refund the players mana
+		Rules.ChangeMana( caster$, owner.go.getmagic.manacost );
+
+		// Get rid of any temporary storage
+		SiegeFx.ClearVariables( owner.goid );
+
+		PostWorldMessage( WE_REQ_DELETE, owner.Goid, owner.Goid, 1 );
+	}
+}

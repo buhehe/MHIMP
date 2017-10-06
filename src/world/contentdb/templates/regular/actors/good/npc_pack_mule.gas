@@ -1,0 +1,155 @@
+[t:template,n:pack_mule]
+{
+	category_name = "1W_character";
+	doc = "pack_mule";
+	specializes = actor_good;
+	[actor]
+	{
+		can_level_up = true;
+		[skills]
+		{
+			strength =  11, 0;
+			intelligence =  3, 0;
+			dexterity =  8, 0;
+		}
+		portrait_icon = b_gui_ig_i_ic_na_pack_mule;
+	}
+	[aspect]
+	{
+		life_recovery_unit	 = 1;
+        life_recovery_period = 5;
+
+		mana_recovery_unit   = 1;
+		mana_recovery_period = 10;
+
+		model = m_c_na_pm_pos_1;
+		gold_value = 600;
+		[voice]
+		{
+			[die]			{ priority = high; * = s_e_die_packmule; }
+		}
+	}
+	[attack]
+	{
+		attack_range = 0.5;
+		damage_max = 3;
+		damage_min = 7;
+	}
+	[body]
+	{
+		avg_move_velocity = 4.550000;
+		[bone_translator]
+		{
+			body_anterior = bone21_neck_top;
+			body_mid = bone32_load;
+			body_posterior = bone47_pelvis;
+			kill_bone = bone01_root;
+			shield_bone = bone41_sack_l;
+			weapon_bone = bone37_sack_r;
+		}
+		[chore_dictionary]
+		{
+			chore_prefix = a_c_na_pm_fs;
+			[chore_attack]
+			{
+				chore_stances = 0;
+				skrit = select_attack;
+				[anim_files] { 00=at; }
+			}
+			[chore_misc]
+			{
+				chore_stances = 0;
+				skrit = select_transition;
+				[anim_files]
+				{
+					atak=at;
+				}
+			}
+			[chore_default]
+			{
+				chore_stances = 0;
+				skrit = infinite_loop;
+				[anim_files] { 00=ds; }
+			}
+			[chore_die]
+			{
+				chore_stances = 0;
+				skrit = select_transition;
+				[anim_files] { 00=di; }
+			}
+			[chore_fidget]
+			{
+				chore_stances = 0;
+				skrit = select_fidget;
+				[anim_files]
+				{
+					00 = dsf;
+					01 = dsf-02;
+					02 = dsf-03;
+					03 = dsf-04;
+					04 = dsf-05;
+				}
+			}
+			[chore_walk]
+			{
+				chore_stances = 0;
+				skrit = select_walk;
+				[anim_files] { 00=rl; }
+			}
+		}
+	}
+	[common]
+	{
+		membership = hero;
+		screen_name="Packmule";
+    	auto_expiration_class = never;
+		forced_expiration_class = never;
+/*		[template_triggers]
+		{
+			[*]
+			{
+				action* = call_sfx_script("mule_dung");
+				condition* = receive_world_message("WE_ENTERED_WORLD");
+				single_shot = true;
+			}
+		}  */
+	}
+    [defend] { defense=12; }
+	[inventory]
+	{
+		grid_height = 13;
+		grid_width = 12;
+		is_pack_only = true;
+		[ranges]
+		{
+			0.33 = m_c_na_pm_pos_2;
+			0.66 = m_c_na_pm_pos_3;
+			1.00 = m_c_na_pm_pos_4;
+		}
+	}
+	[mind]
+	{
+		jat_attack_object_melee			= world\ai\jobs\common\job_attack_object_melee.skrit
+			?face_reverse				= true;
+//		$ plant eating behavior for the pack_mule. -ET
+//		jat_fidget						= world\ai\jobs\common\job_fidget.skrit
+//			?curious=1.0
+//			&interest="plant"
+//			&still=false
+//			&approach_dist=1.5;
+		jat_drink						= ; // This job is unassigned because mules can't (currently) drink
+		on_enemy_spotted_attack 		= true;
+		//actor_attacks_others_in_icz	= false;
+		on_enemy_entered_ocz_flee		= true;
+		inner_comfort_zone_range		= 3;
+		outer_comfort_zone_range		= 8;
+		personal_space_range			= 0.7;
+		melee_engage_range				= 1;
+		ranged_engage_range				= 2;
+		sight_range						= 10;
+		flee_distance					= 6;
+		com_range						= 0;
+	}
+	[water_effects] {}
+	[StoreStuff]{}
+}

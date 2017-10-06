@@ -1,0 +1,198 @@
+[t:template,n:base_pm_fg]
+{
+	category_name = "1W_character";
+	doc = "Base template for female party members based on farmgirl.";
+	specializes = base_farmgirl;
+	[inventory]
+	{
+		selected_active_location = IL_ACTIVE_MELEE_WEAPON;
+		[equipment]
+		{
+			es_spellbook = book_glb_magic_01;
+		}
+	}
+	[conversation]{}
+	[store] { can_sell_self = true; }
+	[water_effects] {}
+}
+[t:template,n:naidi]
+{
+	doc = "naidi";
+	specializes = base_pm_fg;
+	[actor]
+	{
+		portrait_icon = b_gui_ig_i_ic_c_na;
+		[skills]
+		{
+			strength 		=   0, 0, 10;
+			intelligence 	=  	0, 0, 10;
+			dexterity 		=   0, 0, 10;
+            Ranged 			= 	0, 0, 0;
+            uber 			= 	0, 0, 0;
+		}
+	}
+	[aspect]
+	{
+        gold_value = 1050;
+		model = m_c_gah_fg_pos_a1;
+		[textures]
+		{
+			0 = b_c_gah_fg_skin_22;
+			1 = b_c_pos_a1_062;
+		}
+	}
+	[common] { screen_name="Naidi"; }
+   	[inventory]
+	{
+		[equipment]
+		{
+
+		}
+        [other]
+        {
+
+        }
+	}
+	[StoreStuff]{}
+}
+[t:template,n:phaedriel]
+{
+	doc = "phaedriel";
+	specializes = base_pm_fg;
+	[actor]
+	{
+		portrait_icon = b_gui_ig_i_ic_c_phaedriel;
+		[skills]
+		{
+			strength 		=   0, 0, 10;
+			intelligence 	=  	0, 0, 10;
+			dexterity 		=   0, 0, 10;
+            ranged 			= 	0,0, 0;
+            uber 			= 	0,0, 0;
+		}
+	}
+	[aspect]
+	{
+        gold_value = 38400;
+		model = m_c_gah_fg_pos_a1;
+		[textures]
+		{
+			0 = b_c_gah_fg_skin_25;
+			1 = b_c_pos_a1_061;
+		}
+	}
+	[common] { screen_name="Phaedriel"; }
+	[conversation] { }
+   	[inventory]
+	{
+		[equipment]
+		{
+
+		}
+        [other]
+        {
+
+        }
+
+	}
+
+}
+[t:template,n:sikra]
+{
+	doc = "sikra";
+	specializes = base_pm_fg;
+	[actor]
+	{
+		portrait_icon = b_gui_ig_i_ic_c_si;
+		[skills]
+		{
+			strength 		=  4.99, 0, 10;
+			intelligence 	=  26.89, 0, 10;
+			dexterity 		=  6.53, 0, 10;
+            combat_magic 	=  38,0, 0;
+            nature_magic 	=  20, 0, 0;
+            uber 			=  38.42, 0, 0;
+		}
+	}
+	[aspect]
+	{
+		model = m_c_gah_fg_pos_a1;
+		[textures]
+		{
+			0 = b_c_gah_fg_skin_15;
+			1 = b_c_pos_a1_038;
+		}
+	}
+	[common] { screen_name="Sikra"; }
+	[conversation] { }
+
+   	[inventory]
+	{
+ /*
+		[other] //$$$ commented to fix RAID#5152 "NPC'S: Sikra is an armed prisoner."
+		{
+			il_active_primary_spell = #cmagic/12-13;
+            il_main = #nmagic/2-3;
+            il_main = #cmagic/9-11;
+            il_main = #cmagic/11-12;
+            il_main = #cmagic/12-13;
+            il_main = #cmagic/12-13;
+		}*/
+		[equipment]
+		{
+//			es_weapon_hand = #Staff/9-11;
+            es_chest = #body,m/200-230;
+            es_feet = #boots/30-35;
+		}
+		[other]
+        {
+			il_main = book_glb_lore_dragon;
+        }
+	}
+
+}
+[t:template,n:ulora]
+{
+	doc = "ulora";
+	specializes = base_pm_fg;
+	[actor]
+	{
+		portrait_icon = b_gui_ig_i_ic_c_ul;
+		[skills]
+		{
+			strength =   		0, 0, 10;
+			intelligence =  	0, 0, 10;
+			dexterity =   		0, 0, 10;
+            melee 	=  			0,0, 0;
+            ranged 	=  			0,0, 0;
+            nature_magic 	=  	0, 0, 0;
+            uber 			=  	0, 0, 0;
+
+		}
+		screen_class = "Scribe";
+	}
+	[aspect]
+	{
+		model = m_c_gah_fg_pos_a1;
+		[textures]
+		{
+			0 = b_c_gah_fg_skin_16;
+			1 = b_c_pos_a1_026;
+		}
+	}
+	[common] { screen_name="Ulora"; }
+	[inventory]
+	{
+		custom_head = m_c_gah_fg_hlmt_ulora;
+		[equipment]
+		{
+
+		}
+        [other]
+        {
+
+        }
+
+	}
+	[StoreStuff]{}
+}

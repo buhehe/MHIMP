@@ -1,0 +1,84 @@
+[t:template,n:myst]
+{
+	doc = "myst";
+	specializes = base_pm_fg;
+	[actor]
+	{
+		portrait_icon = b_gui_ig_i_ic_c_ul;
+		[skills]
+		{
+			strength =   		0, 0, 10;
+			intelligence =  	0, 0, 10;
+			dexterity =   		0, 0, 10;
+            melee 	=  			0, 0, 0;
+            ranged 	=  			0, 0, 0;
+            nature_magic 	=  	0, 0, 0;
+            uber 			=  	0, 0, 0;
+
+		}
+		screen_class = "Scribe";
+	}
+	[aspect]
+	{
+		model = m_c_gah_fg_pos_a1;
+		[textures]
+		{
+			0 = b_c_gah_fg_skin_25;
+			1 = b_c_pos_a1_061;
+		}
+	}
+	[common] { screen_name="Myst sand"; }
+	[inventory]
+	{
+        //[other]
+        //{
+
+        //}
+
+	}
+	[StoreStuff]{}
+}
+
+[t:template,n:kanathia]
+{
+	doc = "Kanathia";
+	specializes = base_pm_fb;
+	[actor]
+	{
+		portrait_icon = b_gui_ig_i_ic_c_ze; // need to change
+		[skills]
+		{
+			dexterity 		= 0, 0, 10;
+			intelligence 	= 0, 0, 10;
+			strength 		= 0, 0, 10;
+			nature_magic 	= 0, 0, 0;
+			uber 			= 0, 0, 0;
+		}
+	}
+	[aspect]
+	{
+		model = m_c_gah_fb_pos_a6;
+		[textures]
+		{
+			0 = b_c_gah_fb_skin_13;
+			1 = b_c_pos_a7_013;
+		}
+	}
+	[attack]
+	{
+		attack_range = 0.5;
+	}
+	[common]
+	{
+		screen_name = "Kanathia";
+	}
+	[inventory]
+	{
+		//[other]
+		//{
+
+		//}
+	}
+	[StoreStuff]{}
+
+}

@@ -1,0 +1,328 @@
+// StoreStuff.skrit 0.9 timer, Rostro
+// modifed Icemages thankfull example Timer_Example.Skrit
+// 12 16 02 fixed bogus info showing up in main inv. export by adding
+// tempcopcall1.clear();.  Thanks trak3r.  Exports every 60 seconds now.
+// 10 29 02 this skrit time runs every 30 seconds exporting stuff to the
+// export file.  One 'bug' if you hit Alt-Tab, the next export will be fugazzled.
+// known bug, currently duplicates the equiped bow?
+// Team Elemental helped much with the exporting of magical weapons
+
+owner = GoSkritComponent;
+GoID MyChar$;
+String Filename$;
+Bool EquipedShield$ = False;
+GoCloneReq cloneReq$;
+Goid summoned_goid$;
+Go Summon$;
+//functions:
+// Rostro Modified TransferSpell.skrit by Icemage to export spell book spells
+//ExportSpell$( Go SpellBookGO$, int Slot$)
+Void ExportSpell$( Go SpellBookGO$ )
+{
+    Go Spell$;
+	Spell$ = SpellBookGO$.Inventory.GetItem(il_spell_1);
+	if (Spell$ <> null){DllLink.storeStuff(Spell$.templatename, Filename$);}
+	Spell$ = SpellBookGO$.Inventory.GetItem(il_spell_2);
+	if (Spell$ <> null){DllLink.storeStuff(Spell$.templatename, Filename$);}
+	Spell$ = SpellBookGO$.Inventory.GetItem(il_spell_3);
+	if (Spell$ <> null){DllLink.storeStuff(Spell$.templatename, Filename$);}
+	Spell$ = SpellBookGO$.Inventory.GetItem(il_spell_4);
+ 	if (Spell$ <> null){DllLink.storeStuff(Spell$.templatename, Filename$);}
+	Spell$ = SpellBookGO$.Inventory.GetItem(il_spell_5);
+	if (Spell$ <> null){DllLink.storeStuff(Spell$.templatename, Filename$);}
+	Spell$ = SpellBookGO$.Inventory.GetItem(il_spell_6);
+	if (Spell$ <> null){DllLink.storeStuff(Spell$.templatename, Filename$);}
+	Spell$ = SpellBookGO$.Inventory.GetItem(il_spell_7);
+	if (Spell$ <> null){DllLink.storeStuff(Spell$.templatename, Filename$);}
+	Spell$ = SpellBookGO$.Inventory.GetItem(il_spell_8);
+	if (Spell$ <> null){DllLink.storeStuff(Spell$.templatename, Filename$);}
+	Spell$ = SpellBookGO$.Inventory.GetItem(il_spell_9);
+	if (Spell$ <> null){DllLink.storeStuff(Spell$.templatename, Filename$);}
+	Spell$ = SpellBookGO$.Inventory.GetItem(il_spell_10);
+	if (Spell$ <> null){DllLink.storeStuff(Spell$.templatename, Filename$);}
+	Spell$ = SpellBookGO$.Inventory.GetItem(il_spell_11);
+	if (Spell$ <> null){DllLink.storeStuff(Spell$.templatename, Filename$);}
+	Spell$ = SpellBookGO$.Inventory.GetItem(il_spell_12);
+	if (Spell$ <> null){DllLink.storeStuff(Spell$.templatename, Filename$);}
+}
+
+Void StoreEq$(Go Temp$)
+{
+	DllLink.storeStuff("a", Filename$); // a relational spacer
+	if (Temp$ == null )
+	{
+		DllLink.storeStuff("", Filename$);
+		DllLink.storeStuff("", Filename$);
+		//two blank lines, one for template, other Pcontent
+		return;// blank
+	}
+		//( "template %s ", temp$.templatename );
+		//( "variation %s ", temp$.gui.variation );
+		//( "prefix %s ", temp$.magic.getprefixmodifiername );
+		//( "suffix %s ", temp$.magic.getsuffixmodifiername );
+
+    String Pcomplete$ = "";
+    String Ptemplate$ = "";
+	DllLink.storeStuff(Temp$.templatename, Filename$);
+	//report.screenf("template %s", Temp$.templatename );
+	Pcomplete$ = "#";
+	StringTool.Append(Pcomplete$, Temp$.templatename);
+	Ptemplate$ = Pcomplete$;
+
+	If ( temp$.gui.variation <> "" )
+	{
+		//report.screenf("variation %s", temp$.gui.variation);
+		StringTool.Append(Pcomplete$, ":");
+		StringTool.Append(Pcomplete$, temp$.gui.variation);
+	}
+
+	If ( temp$.magic.getprefixmodifiername <> "" )
+	{
+		//report.screenf("prifix %s", temp$.magic.getprefixmodifiername);
+		StringTool.Append(Pcomplete$, "/+");
+		StringTool.Append(Pcomplete$, temp$.magic.getprefixmodifiername);
+	}
+
+	If ( temp$.magic.getsuffixmodifiername <> "" )
+	{
+		//report.screenf("suffix %s",  temp$.magic.getsuffixmodifiername);
+		StringTool.Append(Pcomplete$, "/+");
+		StringTool.Append(Pcomplete$, temp$.magic.getsuffixmodifiername);
+	}
+	  if (Pcomplete$ == Ptemplate$)
+	  {
+	  	DllLink.storeStuff("", Filename$);
+	  	return; // blank
+	  }
+	  Else
+	  {
+    	DllLink.storeStuff(Pcomplete$, Filename$);
+    	//report.screenf("pcomplete %s", Pcomplete$);
+    	return; // pcontent exists
+      }
+}
+
+
+Trigger OnTimer$(1)
+{
+    //Report.ScreenF(" filename %s", Filename$);
+	// insert store code here
+
+		//Report.Screen("exporting stuff");
+
+		cloneReq$ = MakeGoCloneReq( owner.Goid, owner.goid );
+		summoned_goid$ = GoDb.SCloneGo(cloneReq$);
+		Summon$ = summoned_goid$.Go;
+		
+		DllLink.storeStats (-1, Filename$); //creates a new file
+		DllLink.storeStats (-10, Filename$); //flag to tell gather that file exists
+
+//1-4 Skill XP positions melee 1, ranged 2, Cm3, Nm 4
+		//melee
+		float melee$ = Summon$.Actor.GetSkillLevel("melee");
+		float exp$ = Rules.LevelToXP(melee$);
+		DllLink.storeStats (exp$, Filename$);
+
+
+	  	//ranged
+		float ranged$ = Summon$.Actor.GetSkillLevel("ranged");
+		exp$ = Rules.LevelToXP(ranged$);
+		DllLink.storeStats (exp$, Filename$);
+
+		//Nm
+		float Nm$ = Summon$.Actor.GetSkillLevel("Nature Magic");
+		exp$ = Rules.LevelToXP(Nm$);
+		DllLink.storeStats (exp$, Filename$);
+
+		//Cm
+		float Cm$ = Summon$.Actor.GetSkillLevel("Combat Magic");
+		exp$ = Rules.LevelToXP(Cm$);
+		DllLink.storeStats (exp$, Filename$);
+
+//5-7. Stats str5 int6 dex7
+		float Str$ = Summon$.Actor.GetSkillLevel("Strength");
+		Str$ = Str$ - 10;
+		DllLink.storeStats (str$, Filename$);
+		float Dex$ = Summon$.Actor.GetSkillLevel("Dexterity");
+		Dex$ = Dex$ - 10;
+		DllLink.storeStats (dex$, Filename$);
+		float Int$ = Summon$.Actor.GetSkillLevel("Intelligence");
+		Int$ = Int$ - 10;
+		DllLink.storeStats (int$, Filename$);
+
+//8,9 Equipped SpellBook (if none store ""); cannot store nothing or
+//it will throw off the numbering placement scheme when gathering
+		Go OneUse$;
+		// these declarations were for the DUPTEST.  Xaas isequipped idea replaced this
+        Go Mle$, Rnge$, Helme$, Armou$, Glove$, Amule$, Boot$, Rin1$;
+        Go Rin2$, Rin3$, Rin4$, Shiel$, SplB$;
+
+//get equiped spell book:
+		SplB$ = owner.go.inventory.GetEquipped( ES_SpellBook );
+		//SplBk$ = StoreEq$(SplB$);
+		StoreEq$(SplB$);
+
+//10+ SpellBook spells (if none ="endspell")
+	    if (SplB$ <> null ) {ExportSpell$(SplB$);}//export spell book spells
+	    DllLink.storeStuff("endspell", Filename$);
+
+// Melee eq export
+		//set melee to active weapon
+		//m_GO_Inv$.RSSelect(il_active_ranged_weapon, AO_HUMAN);
+   		//m_Mind$.SetActorWeaponPreference(WP_RANGED);
+		//owner.go.mind.SetActorWeaponPreference(WP_MELEE);
+		Mle$ = owner.go.inventory.GetItem( il_active_melee_weapon );
+		StoreEq$(Mle$);
+
+
+// Ranged eq export
+		//owner.go.mind.SetActorWeaponPreference(WP_RANGED);
+		Rnge$ = owner.go.inventory.GetItem( il_active_ranged_weapon );
+		StoreEq$(Rnge$);
+
+
+//helmet
+		Helme$ = owner.go.inventory.GetEquipped( ES_HEAD );
+		StoreEq$(Helme$);
+
+
+// armour eq
+		armou$ = owner.go.inventory.GetEquipped( ES_CHEST );
+		StoreEq$(armou$);
+
+
+// gloves eq
+		glove$ = owner.go.inventory.GetEquipped( ES_FOREARMS );
+		StoreEq$(glove$);
+
+
+// amulet eq
+		amule$ = owner.go.inventory.GetEquipped( ES_AMULET );
+		StoreEq$(amule$);
+
+// boots eq
+		boot$ = owner.go.inventory.GetEquipped( ES_FEET );
+		StoreEq$(boot$);
+
+
+// ring 1
+		rin1$ = owner.go.inventory.GetEquipped( ES_ring_0 );
+		StoreEq$(rin1$);
+
+
+//ring 2
+		rin2$ = owner.go.inventory.GetEquipped( ES_ring_1 );
+		StoreEq$(rin2$);
+
+
+//ring3
+		rin3$ = owner.go.inventory.GetEquipped( ES_ring_2 );
+		StoreEq$(rin3$);
+
+
+//ring4
+		rin4$ = owner.go.inventory.GetEquipped( ES_ring_3 );
+		StoreEq$(rin4$);
+
+
+//sheild // shield moved to last since having trouble// is working now?
+		//shiel$ = owner.go.inventory.GetEquipped( ES_SHIELD_HAND );
+		shiel$ = owner.go.inventory.GetItem( il_shield );
+		StoreEq$(shiel$);
+		//report.screenf("template name %s ",shiel$.templatename);
+		//owner.Inventory.RSUnequip( ES_SHIELD_HAND, AO_REFLEX );
+		
+
+// get evenything in the main inventory,
+		 owner.Go.Mind.Tempgopcoll1.clear();  // clear mind first
+         owner.Go.Inventory.ListItems( IL_MAIN, owner.Go.Mind.TempGopColl1 );
+         int i$ = 0;
+		 int i2$ = 0;
+         int iend$ = 0;
+         string book$;
+         string Ptest$;
+         Bool NotDup$ = True;
+
+         iend$ = owner.Go.Mind.TempGopColl1.size;
+		 i2$ = iend$;
+         //report.screenF("total number of items in ilmain %i ", iend$);
+
+         // itterate through the inventory
+         while( i$ < iend$ )
+         {
+            OneUse$ = owner.Go.Mind.TempGopColl1.Get( i$ );
+
+            if( OneUse$ != null )
+            {
+				// the following dup test do not work conistently
+				// Xaa recommended seing if the Go is equiped
+
+				// Try a shield fix, workaround
+				//if ( stringtool.Left(OneUse$.templatename, 3) == "sh_")
+				//{
+					//if(!EquipedShield$){
+						//owner.Go.Inventory.RSAdd(OneUse$.Go, IL_MAIN, AO_REFLEX, false);
+						//StoreEQ$(OneUse$);
+						//report.screenf("template name %s ",OneUse$.templatename);
+						//owner.Go.Inventory.RSEquip(OneUse$.Gui.GetEquipSlot(), OneUse$.Goid, AO_REFLEX);
+						//EquipedShield$ = True ;
+					//}
+					//StoreEQ$(OneUse$);
+					//report.screenf("template name %s ",OneUse$.templatename);
+				//}
+
+				if (!owner.Go.Inventory.IsEquipped(OneUse$))  //is it equiped?
+				{
+					StoreEQ$(OneUse$);
+					//report.screenf("template name %s ",OneUse$.templatename);
+
+					//if OneUse$ = "spell book"
+					book$ = stringtool.Left(OneUse$.templatename, 5);
+
+		     		if (book$ == "book_")
+					{
+						ExportSpell$(OneUse$ );//export spell book spells
+	    				DllLink.storeStuff("endspell", Filename$);
+					}
+					
+					//Try Shield Fix
+					//if( !EquipedShield$ && stringtool.Left(OneUse$.templatename, 3) == "sh_")
+					//{
+						//owner.Go.Inventory.RSEquip(OneUse$.Gui.GetEquipSlot(), OneUse$.Goid, AO_REFLEX);
+						//EquipedShield$ = True ;
+					//}
+				}
+            }
+            i$ += 1;
+         }
+		 
+		if( summoned_goid$.isvalid ) 
+		{					
+				GoDb.SMarkGoAndChildrenForDeletion( summoned_goid$, true, true );
+		}
+//end of inv iter code
+		DllLink.storeStuff("EOF", Filename$); // end of file
+	report.screen("into timer");
+    This.CreateTimer(1, 60);
+}
+
+startup state STARTUP$
+
+{
+	trigger OnGoHandleMessage$ (WE_ENTERED_WORLD)
+	{
+		report.screen(" entered world");
+		//MyChar$ = owner;  NOt happening??
+  		Owner.Go.Common.GetScreenName( Filename$ );
+		setstate Storing$;
+	}
+}
+
+State Storing$
+{
+  Event OnEnterState$
+  {
+    //report.screen("into timer");
+    This.CreateTimer(1,60);
+  }
+}
