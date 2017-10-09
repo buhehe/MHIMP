@@ -1,6 +1,11 @@
 # MHIMP
 A Dungeon Siege mod to control more than one heroes in multiplayer.
 
+# Releases
+2017 10 07
+Release is here.
+https://github.com/buhehe/MHIMP/releases
+
 # Fixed Issues
 2017 09 20
 Fixed shield export on the summoned character.
